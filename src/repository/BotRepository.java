@@ -57,4 +57,17 @@ public class BotRepository {
         }
         return null;
     }
+
+    public boolean delete(int id) throws SQLException {
+        String sql = "DELETE FROM bots WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+            int rowsAffected = pstmt.executeUpdate();
+
+            return rowsAffected > 0;
+        }
+    }
 }

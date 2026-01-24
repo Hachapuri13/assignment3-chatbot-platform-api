@@ -30,4 +30,12 @@ public class ChatService {
         User user = new User(0, name, persona, isPremium);
         userRepository.create(user);
     }
+
+    public void deleteBot(int id) throws SQLException {
+        boolean isDeleted = botRepository.delete(id);
+
+        if (!isDeleted) {
+            throw new exception.ResourceNotFoundException("Bot with ID " + id + " not found.");
+        }
+    }
 }

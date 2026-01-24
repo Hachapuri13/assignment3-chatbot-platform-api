@@ -24,6 +24,7 @@ public class Main {
             System.out.println("2. Create New User");
             System.out.println("3. Show All Bots");
             System.out.println("4. Start Chat Session (Demo)");
+            System.out.println("5. Delete Bot");
             System.out.println("0. Exit");
             System.out.print("Select option: ");
 
@@ -80,7 +81,13 @@ public class Main {
                             System.out.println("Bot or User not found.");
                         }
                         break;
+                    case "5":
+                        System.out.print("Enter Bot ID to delete: ");
+                        int delId = Integer.parseInt(scanner.nextLine());
 
+                        service.deleteBot(delId);
+                        System.out.println("Success: Bot deleted.");
+                        break;
                     case "0":
                         System.out.println("Exiting...");
                         return;
