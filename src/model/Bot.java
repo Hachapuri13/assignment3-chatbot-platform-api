@@ -27,6 +27,16 @@ public class Bot extends ChatParticipantBase implements Tokenizable {
         return (name.length() + definition.length() + greeting.length()) / 4;
     }
 
+    @Override
+    public String getRole() {
+        return "AI Assistant";
+    }
+
+    @Override
+    public String getLogMessage() {
+        return "Bot Log [ID=" + id + "]: " + name + " (Limit: " + tokenLimit + ")";
+    }
+
     public String getGreeting() { return greeting; }
     public String getDefinition() { return definition; }
     public int getTokenLimit() { return tokenLimit; }

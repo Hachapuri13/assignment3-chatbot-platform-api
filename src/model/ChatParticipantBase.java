@@ -1,6 +1,6 @@
 package model;
 
-public abstract class ChatParticipantBase {
+public abstract class ChatParticipantBase implements Loggable {
     protected int id;
     protected String name;
 
@@ -13,6 +13,8 @@ public abstract class ChatParticipantBase {
     public String getName() { return name; }
 
     public abstract String getSystemPrompt();
+
+    public abstract String getRole();
 
     public abstract void displayInfo();
 }

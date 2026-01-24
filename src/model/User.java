@@ -25,6 +25,16 @@ public class User extends ChatParticipantBase implements Tokenizable {
         return (name.length() + persona.length()) / 4;
     }
 
+    @Override
+    public String getRole() {
+        return "Human User";
+    }
+
+    @Override
+    public String getLogMessage() {
+        return "User Log [ID=" + id + "]: " + name + " (Premium: " + isPremium + ")";
+    }
+
     public String getPersona() { return persona; }
     public boolean isPremium() { return isPremium; }
 }
