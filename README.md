@@ -15,9 +15,9 @@ This project is a Java-based API developed for Assignment 3. The purpose of the 
 The system models three main entities:
 * **Bot**: Represents an AI character with a specific definition and token limit.
 * **User**: Represents a human user with a specific persona.
-* **ChatSession**: Represents a composite entity linking a User and a Bot.
+* **ChatSession**: Represents a composite entity linking a User and a Bot, now fully persisted in the database with usage statistics.
 
-The project demonstrates advanced Object-Oriented Programming concepts, including inheritance with abstract base classes, interface implementation for polymorphic behavior, and composition. It also implements data persistence using raw SQL queries via `PreparedStatement` to ensure security and performance.
+The project demonstrates advanced Object-Oriented Programming concepts, including inheritance, polymorphism, and **Dependency Injection** (injected Repositories and Database providers). It implements data persistence using raw SQL queries via `PreparedStatement` to ensure security and performance.
 
 ---
 
@@ -25,20 +25,21 @@ The project demonstrates advanced Object-Oriented Programming concepts, includin
 
 ### Abstract class and subclasses
 The project uses an inheritance hierarchy to minimize code duplication.
-* **`ChatParticipantBase` (Abstract Class)**: Defines the common state (`id`, `name`) and behavior for all participants. It enforces a contract using abstract methods like `getSystemPrompt()` which must be implemented by subclasses.
-* **`Bot` (Subclass)**: Extends the base class and adds fields for `greeting`, `definition`, and `tokenLimit`. It implements the system prompt as a rigid instruction set.
-* **`User` (Subclass)**: Extends the base class and adds `persona` and `isPremium` status. It implements the system prompt as user context information.
+* **`ChatParticipantBase` (Abstract Class)**: Defines the common state (`id`, `name`) and behavior for all participants.
+* **`Bot` (Subclass)**: Extends the base class and adds fields for `greeting`, `definition`, and `tokenLimit`.
+* **`User` (Subclass)**: Extends the base class and adds `persona` and `isPremium` status.
 
 ### Interfaces and implemented methods
-* **`Tokenizable` Interface**: Defines the method `estimateTokenUsage()`.
-* Both `Bot` and `User` implement this interface. This allows the system to treat different objects uniformly when calculating computational costs. For example, a `Bot` calculates tokens based on its definition length, while a `User` calculates based on persona length.
+* **`Tokenizable` (Business Logic Interface)**: Defines `estimateTokenUsage()`. Both `Bot` and `User` implement this to calculate computational costs differently.
+* **`IDB` (Infrastructure Interface)**: Defines the contract for database connections (`getConnection`).
+    * Implemented by **`PostgresDB`**: Handles the specific JDBC driver logic and credentials. This allows decoupling the application logic from the specific database implementation.
 
 ### Composition/aggregation
-* **`ChatSession` Class**: Demonstrates a composition relationship. A session cannot exist usefully without referring to existing `Bot` and `User` objects. It aggregates these entities to track when a conversation started.
+* **`ChatSession` Class**: Aggregates `Bot` and `User` objects. It tracks the start time and the `totalTokensUsed` for the interaction, providing a snapshot of the conversation cost.
 
 ### Polymorphism examples
-* The method `estimateTokenUsage()` behaves differently depending on whether the object is a `Bot` or a `User`.
-* The `getSystemPrompt()` method returns a different string format for each subclass.
+* **Repositories**: The `ChatService` relies on the `IDB` interface, not a concrete database class, allowing for flexible dependency injection.
+* **Domain Models**: `ChatParticipantBase` references allow treating Bots and Users uniformly in certain contexts (e.g., logging names).
 
 ### UML diagram
 
@@ -54,25 +55,25 @@ The project uses a relational database (PostgreSQL) named `chatbot_platform`.
 
 1.  **users**
     * `id` (SERIAL, PK): Unique identifier.
-    * `name` (VARCHAR): User's name. Not Null constraint.
+    * `name` (VARCHAR): User's name. Not Null.
     * `persona` (TEXT): Description of the user.
     * `is_premium` (BOOLEAN): Premium status flag.
 
 2.  **bots**
     * `id` (SERIAL, PK): Unique identifier.
-    * `name` (VARCHAR): Bot's name. Not Null constraint.
+    * `name` (VARCHAR): Bot's name. Not Null.
     * `greeting` (TEXT): Initial message.
     * `definition` (TEXT): System instructions.
     * `token_limit` (INT): Check constraint `CHECK (token_limit > 0)`.
 
 3.  **chat_sessions**
     * `id` (SERIAL, PK): Unique identifier.
-    * `bot_id` (INT): Foreign Key referencing `bots(id)`. ON DELETE CASCADE.
-    * `user_id` (INT): Foreign Key referencing `users(id)`. ON DELETE CASCADE.
+    * `bot_id` (INT): FK referencing `bots(id)`. ON DELETE CASCADE.
+    * `user_id` (INT): FK referencing `users(id)`. ON DELETE CASCADE.
     * `started_at` (TIMESTAMP): Session start time.
+    * `total_tokens_used` (INT): Stores the calculated context load for the session.
 
-### Sample SQL inserts
-The following SQL commands were used to seed the database (located in `resources/schema.sql`):
+### Sample SQL inserts (from resources/schema.sql)
 
 ```sql
 INSERT INTO users (name, persona, is_premium) VALUES 
@@ -86,12 +87,14 @@ INSERT INTO bots (name, greeting, definition, token_limit) VALUES
 
 ## D. Controller
 
-The `Main` class serves as the Controller layer, exposing CRUD operations through a Command Line Interface (CLI). It delegates business logic to `ChatService`.
+The `Main` class serves as the Controller layer. It configures the application using **Dependency Injection** (wiring Repositories with the Database provider) and exposes full CRUD operations via CLI.
 
 ### Summary of CRUD operations
-* **Create (POST-like)**: The user inputs data via `Scanner`, the controller calls `service.createBot()`, which validates inputs before calling `repository.create()`.
-* **Read (GET-like)**: The controller calls `repository.getAll()` to fetch a list of entities and displays them using `displayInfo()`.
-* **Interaction**: The controller links entities by asking for their IDs and creating a `ChatSession`.
+* **Create**: `service.createBot()` / `service.createUser()` -> Validates input and persists to DB.
+* **Read**: `repository.getAll()` -> Fetches list of entities.
+* **Update**: `service.updateBot()` -> Modifies name, definition, or limits of an existing bot.
+* **Delete**: `service.deleteBot()` -> Removes a bot from the DB (cascading deletes sessions).
+* **Session Logging**: `service.logChatSession()` -> Calculates context load and saves the interaction history to the `chat_sessions` table.
 
 ---
 
@@ -101,59 +104,63 @@ The `Main` class serves as the Controller layer, exposing CRUD operations throug
 Before running the application, you must initialize the database:
 1.  Create a new PostgreSQL database named `chatbot_platform`.
 2.  Open the file `resources/schema.sql` and execute the SQL script inside your database manager (pgAdmin / DBeaver).
-    * *This step is mandatory to create the necessary tables (`users`, `bots`, `chat_sessions`) and seed initial data.*
+    * *This creates the required tables and columns (including `total_tokens_used`).*
 
-### 2. Configuration
-To allow the application to connect to your local PostgreSQL server:
-1.  Open the file `src/utils/DatabaseConnection.java`.
-2.  Locate the `PASSWORD` constant and update it with your local PostgreSQL password:
+### 2. Configuration (Environment Variables)
+The application uses **Environment Variables** for security, but includes a fallback for local testing.
+* **Option A (Recommended):** Set the following Environment Variables in your IDE run configuration:
+    * `DB_HOST` (e.g., localhost:5432)
+    * `DB_NAME` (e.g., chatbot_platform)
+    * `DB_USER` (e.g., postgres)
+    * `DB_PASSWORD` (your actual password)
+* **Option B (Quick Start):** Open `src/controller/Main.java`, locate the "Configuration" block at the start of the `main` method, and update the default password string:
     ```java
-    private static final String PASSWORD = "your_real_password";
+    if (dbPass == null) dbPass = "YOUR_REAL_PASSWORD"; 
     ```
 
 ### 3. Build and Run
-Navigate to the `src` directory in your terminal and run the following commands:
+Navigate to the `src` directory in your terminal:
 
 ```bash
-# Compile (ensure the JDBC driver path is correct for your system)
+# Compile (ensure the JDBC driver path is correct)
 javac -cp ".:../lib/postgresql-42.7.2.jar" controller/Main.java
 
 # Run
 java -cp ".:../lib/postgresql-42.7.2.jar" controller.Main
 ```
-*(Note: If running in IntelliJ IDEA, simply run Main.java via the green play button).*
+*(Note: If using IntelliJ IDEA, simply Run `Main.java` via the green play button. Ensure the PostgreSQL library is added to Project Structure -> Modules -> Dependencies).*
 
 ---
 ## F. Screenshots
 
 ### 1. Create Operations
-Demonstrates the creation of new entities. The Controller accepts input via CLI, and the Service layer validates the data before persisting it to PostgreSQL.
-
-**Creating a Bot:**
+Demonstrates adding new entities (Bot and User) with validation logic.
 ![Create Bot](docs/screenshots/create_bot.png)
 
-**Creating a User:**
-![Create User](docs/screenshots/create_user.png)
-
 ### 2. Read Operations (List All)
-Demonstrates retrieving all Bot entities from the database using `SELECT *`. Note that the ID numbering corresponds to the database sequence.
-
+Retrieves and displays all bots stored in the database.
 ![Read Operations](docs/screenshots/list.png)
 
-### 3. Chat Session (Composition)
-Shows the logical connection between a User and a Bot in a new session. The system calculates the total context load based on the participants' attributes.
+### 3. Update Operation
+Demonstrates modifying an existing bot's attributes (e.g., changing token limit or name).
+![Update Bot](docs/screenshots/update_bot.png)
 
+### 4. Delete Operation
+Demonstrates removing a bot by ID. Note that due to `ON DELETE CASCADE`, associated sessions are also handled safely.
+![Delete Bot](docs/screenshots/delete_bot.png)
+
+### 5. Chat Session Logging
+Shows the process of linking a User and a Bot. The system calculates the context load and logs the session to the database.
 ![Chat Session](docs/screenshots/session.png)
 
-### 4. Error Handling
-Demonstrates the system catching invalid input (negative token limit) using a custom `InvalidInputException` without crashing the application.
-
+### 6. Error Handling
+Demonstrates robust error handling (e.g., preventing negative token limits or handling connection errors).
 ![Error Handling](docs/screenshots/error.png)
 
 ---
 
 ## G. Reflection Section
 
-* **What you learned**: In this assignment, I learned how to connect a Java application to a real database using JDBC. It was interesting to see how the theoretical concepts of OOP (inheritance and polymorphism) map to database tables. I also learned the importance of the "Layered Architecture" (Controller -> Service -> Repository), which keeps the code organized and separates the user interface from database logic.
-* **Challenges faced**: The main challenge was handling SQL Exceptions and understanding the difference between `Statement` and `PreparedStatement`. Initially, I had issues with the JDBC driver path in IntelliJ, but I resolved it by adding the library to the module settings. Another challenge was designing the `ChatSession` logic to correctly link two existing entities from the database.
+* **What you learned**: I learned how to refactor a monolithic application into a clean architecture using **Dependency Injection**. Moving from a static `DatabaseConnection` class to an `IDB` interface implementation (`PostgresDB`) taught me how to make code more testable and flexible. I also mastered raw SQL queries for Update and Delete operations.
+* **Challenges faced**: Transitioning to Environment Variables was tricky initially, as I had to configure the IDE correctly to pass the credentials. Implementing the `Update` logic was also challenging, as it required mapping all fields correctly in the `PreparedStatement`.
 * **Benefits of JDBC and multi-layer design**: Using JDBC allows for persistent data storage, meaning data is not lost when the program closes. The multi-layer design makes the application modular; for example, I can change the database logic in the `Repository` without breaking the code in the `Main` menu. `PreparedStatement` also provides security against SQL injection, which is a crucial benefit over simple string concatenation.

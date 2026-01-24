@@ -28,6 +28,7 @@ CREATE TABLE chat_sessions (
                                bot_id INT NOT NULL,
                                user_id INT NOT NULL,
                                started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                               total_tokens_used INT DEFAULT 0,
 
                                CONSTRAINT fk_bot FOREIGN KEY (bot_id) REFERENCES bots(id) ON DELETE CASCADE,
                                CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
