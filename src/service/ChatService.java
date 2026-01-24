@@ -38,4 +38,20 @@ public class ChatService {
             throw new exception.ResourceNotFoundException("Bot with ID " + id + " not found.");
         }
     }
+    public void updateBot(int id, String newName, String newGreet, String newDef, int newLimit) throws Exception {
+        if (newLimit <= 0) {
+            throw new exception.InvalidInputException("Token limit must be positive.");
+        }
+        if (newName == null || newName.trim().isEmpty()) {
+            throw new exception.InvalidInputException("Bot name cannot be empty.");
+        }
+
+        model.Bot updatedBot = new model.Bot(id, newName, newGreet, newDef, newLimit);
+
+        boolean isUpdated = botRepository.update(updatedBot);
+
+        if (!isUpdated) {
+            throw new exception.ResourceNotFoundException("Bot with ID " + id + " not found.");
+        }
+    }
 }

@@ -25,6 +25,7 @@ public class Main {
             System.out.println("3. Show All Bots");
             System.out.println("4. Start Chat Session (Demo)");
             System.out.println("5. Delete Bot");
+            System.out.println("6. Update Bot");
             System.out.println("0. Exit");
             System.out.print("Select option: ");
 
@@ -87,6 +88,22 @@ public class Main {
 
                         service.deleteBot(delId);
                         System.out.println("Success: Bot deleted.");
+                        break;
+                    case "6":
+                        System.out.print("Enter Bot ID to update: ");
+                        int upId = Integer.parseInt(scanner.nextLine());
+
+                        System.out.print("Enter New Name: ");
+                        String upName = scanner.nextLine();
+                        System.out.print("Enter New Greeting: ");
+                        String upGreet = scanner.nextLine();
+                        System.out.print("Enter New Definition: ");
+                        String upDef = scanner.nextLine();
+                        System.out.print("Enter New Token Limit: ");
+                        int upLimit = Integer.parseInt(scanner.nextLine());
+
+                        service.updateBot(upId, upName, upGreet, upDef, upLimit);
+                        System.out.println("Success: Bot updated.");
                         break;
                     case "0":
                         System.out.println("Exiting...");

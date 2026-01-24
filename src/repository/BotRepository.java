@@ -70,4 +70,21 @@ public class BotRepository {
             return rowsAffected > 0;
         }
     }
+
+    public boolean update(Bot bot) throws SQLException {
+        String sql = "UPDATE bots SET name = ?, greeting = ?, definition = ?, token_limit = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, bot.getName());
+            pstmt.setString(2, bot.getGreeting());
+            pstmt.setString(3, bot.getDefinition());
+            pstmt.setInt(4, bot.getTokenLimit());
+            pstmt.setInt(5, bot.getId());
+
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        }
+    }
 }
