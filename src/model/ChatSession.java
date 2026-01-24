@@ -7,12 +7,14 @@ public class ChatSession {
     private Bot bot;
     private User user;
     private Date startedAt;
+    private int totalTokensUsed;
 
-    public ChatSession(int id, Bot bot, User user, Date startedAt) {
+    public ChatSession(int id, Bot bot, User user, Date startedAt, int totalTokensUsed) {
         this.id = id;
         this.bot = bot;
         this.user = user;
         this.startedAt = startedAt;
+        this.totalTokensUsed = totalTokensUsed;
     }
 
     public void printSessionDetails() {
@@ -20,7 +22,7 @@ public class ChatSession {
         System.out.println("Participants:");
         bot.displayInfo();
         user.displayInfo();
-        System.out.println("Total Context Load: " + (bot.estimateTokenUsage() + user.estimateTokenUsage()) + " tokens.");
+        System.out.println("Total Context Load: " + totalTokensUsed + " tokens.");
         System.out.println("Started at: " + startedAt);
         System.out.println("============================");
     }

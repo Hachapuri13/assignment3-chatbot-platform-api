@@ -32,8 +32,8 @@ public class Main {
         BotRepository botRepo = new BotRepository(db);
         UserRepository userRepo = new UserRepository(db);
 
-        ChatService service = new ChatService(botRepo, userRepo);
-
+        repository.ChatSessionRepository sessionRepo = new repository.ChatSessionRepository(db);
+        ChatService service = new ChatService(botRepo, userRepo, sessionRepo);
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -41,7 +41,7 @@ public class Main {
             System.out.println("1. Create New Bot");
             System.out.println("2. Create New User");
             System.out.println("3. Show All Bots");
-            System.out.println("4. Start Chat Session (Demo)");
+            System.out.println("4. Start Chat Session");
             System.out.println("5. Delete Bot");
             System.out.println("6. Update Bot");
             System.out.println("0. Exit");
@@ -94,8 +94,16 @@ public class Main {
                         User u = userRepo.getById(userId);
 
                         if (b != null && u != null) {
-                            ChatSession session = new ChatSession(1, b, u, new Date());
+                            Date now = new Date();
+
+                            int contextLoad = b.estimateTokenUsage() + u.estimateTokenUsage();
+
+                            service.logChatSession(b, u, now, contextLoad);
+                            System.out.println(">> Connection logged to Database successfully.");
+
+                            ChatSession session = new ChatSession(1, b, u, now, contextLoad);
                             session.printSessionDetails();
+
                         } else {
                             System.out.println("Bot or User not found.");
                         }

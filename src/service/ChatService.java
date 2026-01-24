@@ -5,17 +5,22 @@ import exception.ResourceNotFoundException;
 import model.Bot;
 import model.User;
 import repository.BotRepository;
+import repository.ChatSessionRepository;
 import repository.UserRepository;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.Date;
 
 public class ChatService {
     private final BotRepository botRepository;
     private final UserRepository userRepository;
+    private final ChatSessionRepository sessionRepository;
 
-    public ChatService(BotRepository botRepository, UserRepository userRepository) {
+    public ChatService(BotRepository botRepository, UserRepository userRepository, ChatSessionRepository chatSessionRepository) {
         this.botRepository = botRepository;
         this.userRepository = userRepository;
+        this.sessionRepository = chatSessionRepository;
     }
 
     public void createBot(String name, String greeting, String definition, int tokenLimit) throws InvalidInputException, SQLException {
@@ -59,5 +64,9 @@ public class ChatService {
         if (!isUpdated) {
             throw new exception.ResourceNotFoundException("Bot with ID " + id + " not found.");
         }
+    }
+    public void logChatSession(Bot bot, User user, Date startTime, int tokensUsed) throws SQLException {
+        Timestamp sqlStartTime = new Timestamp(startTime.getTime());
+        sessionRepository.logSession(bot, user, sqlStartTime, tokensUsed);
     }
 }
