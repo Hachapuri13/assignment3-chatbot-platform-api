@@ -1,6 +1,7 @@
 package service;
 
 import exception.InvalidInputException;
+import exception.ResourceNotFoundException;
 import model.Bot;
 import model.User;
 import repository.BotRepository;
@@ -9,8 +10,13 @@ import repository.UserRepository;
 import java.sql.SQLException;
 
 public class ChatService {
-    private BotRepository botRepository = new BotRepository();
-    private UserRepository userRepository = new UserRepository();
+    private final BotRepository botRepository;
+    private final UserRepository userRepository;
+
+    public ChatService(BotRepository botRepository, UserRepository userRepository) {
+        this.botRepository = botRepository;
+        this.userRepository = userRepository;
+    }
 
     public void createBot(String name, String greeting, String definition, int tokenLimit) throws InvalidInputException, SQLException {
         if (name == null || name.isEmpty()) {

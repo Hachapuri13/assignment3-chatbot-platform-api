@@ -1,16 +1,21 @@
 package repository;
 
+import data.interfaces.IDB;
 import model.User;
-import utils.DatabaseConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserRepository {
+    private final IDB db;
+
+    public UserRepository(IDB db) {
+        this.db = db;
+    }
 
     public void create(User user) throws SQLException {
         String sql = "INSERT INTO users (name, persona, is_premium) VALUES (?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = db.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, user.getName());
             pstmt.setString(2, user.getPersona());
@@ -22,7 +27,7 @@ public class UserRepository {
     public List<User> getAll() throws SQLException {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM users";
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = db.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -39,7 +44,7 @@ public class UserRepository {
 
     public User getById(int id) throws SQLException {
         String sql = "SELECT * FROM users WHERE id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = db.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
             ResultSet rs = pstmt.executeQuery();

@@ -1,16 +1,20 @@
 package repository;
 
+import data.interfaces.IDB;
 import model.Bot;
-import utils.DatabaseConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class BotRepository {
+    private final IDB db;
 
+    public BotRepository(IDB db) {
+        this.db = db;
+    }
     public void create(Bot bot) throws SQLException {
         String sql = "INSERT INTO bots (name, greeting, definition, token_limit) VALUES (?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = db.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, bot.getName());
             pstmt.setString(2, bot.getGreeting());
@@ -23,7 +27,7 @@ public class BotRepository {
     public List<Bot> getAll() throws SQLException {
         List<Bot> bots = new ArrayList<>();
         String sql = "SELECT * FROM bots";
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = db.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -41,7 +45,7 @@ public class BotRepository {
 
     public Bot getById(int id) throws SQLException {
         String sql = "SELECT * FROM bots WHERE id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = db.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
             ResultSet rs = pstmt.executeQuery();
@@ -61,7 +65,7 @@ public class BotRepository {
     public boolean delete(int id) throws SQLException {
         String sql = "DELETE FROM bots WHERE id = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = db.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
@@ -74,7 +78,7 @@ public class BotRepository {
     public boolean update(Bot bot) throws SQLException {
         String sql = "UPDATE bots SET name = ?, greeting = ?, definition = ?, token_limit = ? WHERE id = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = db.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, bot.getName());

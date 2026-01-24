@@ -1,5 +1,7 @@
 package controller;
 
+import data.PostgresDB;
+import data.interfaces.IDB;
 import model.Bot;
 import model.User;
 import model.ChatSession;
@@ -13,9 +15,25 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        ChatService service = new ChatService();
-        BotRepository botRepo = new BotRepository();
-        UserRepository userRepo = new UserRepository();
+        String host = System.getenv("DB_HOST");
+        if (host == null) host = "localhost:5432";
+
+        String dbUser = System.getenv("DB_USER");
+        if (dbUser == null) dbUser = "postgres";
+
+        String dbPass = System.getenv("DB_PASSWORD");
+        if (dbPass == null) dbPass = "1234";
+
+        String dbName = System.getenv("DB_NAME");
+        if (dbName == null) dbName = "chatbot_platform";
+
+        IDB db = new PostgresDB(host, dbUser, dbPass, dbName);
+
+        BotRepository botRepo = new BotRepository(db);
+        UserRepository userRepo = new UserRepository(db);
+
+        ChatService service = new ChatService(botRepo, userRepo);
+
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -107,6 +125,7 @@ public class Main {
                         break;
                     case "0":
                         System.out.println("Exiting...");
+                        db.close();
                         return;
 
                     default:
