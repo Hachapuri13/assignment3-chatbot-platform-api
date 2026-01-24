@@ -23,15 +23,23 @@ public class ChatService {
         this.sessionRepository = chatSessionRepository;
     }
 
-    public void createBot(String name, String greeting, String definition, int tokenLimit) throws InvalidInputException, SQLException {
-        if (name == null || name.isEmpty()) {
-            throw new InvalidInputException("Bot name cannot be empty.");
+    public void createBot(String name, String greeting, String definition, int tokenLimit)
+            throws InvalidInputException {
+
+        if (name == null || name.trim().isEmpty()) {
+            throw new exception.InvalidInputException("Bot name cannot be empty.");
         }
         if (tokenLimit <= 0) {
-            throw new InvalidInputException("Token limit must be positive.");
+            throw new exception.InvalidInputException("Token limit must be positive.");
         }
-        Bot bot = new Bot(0, name, greeting, definition, tokenLimit);
-        botRepository.create(bot);
+
+        model.Bot bot = new model.Bot(0, name, greeting, definition, tokenLimit);
+
+        try {
+            botRepository.create(bot);
+        } catch (SQLException e) {
+            throw new exception.DatabaseOperationException("Critical error: Could not save bot to database.", e);
+        }
     }
 
     public void createUser(String name, String persona, boolean isPremium) throws InvalidInputException, SQLException {

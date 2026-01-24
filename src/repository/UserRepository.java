@@ -28,8 +28,8 @@ public class UserRepository {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM users";
         try (Connection conn = db.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery(sql)) {
             while (rs.next()) {
                 users.add(new User(
                         rs.getInt("id"),

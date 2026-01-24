@@ -59,10 +59,24 @@ public class Main {
                         System.out.print("Enter Definition (Prompt): ");
                         String bDef = scanner.nextLine();
                         System.out.print("Enter Token Limit (e.g., 8000): ");
-                        int bLimit = Integer.parseInt(scanner.nextLine());
+                        int bLimit;
+                        try {
+                            bLimit = Integer.parseInt(scanner.nextLine());
+                        } catch (NumberFormatException e) {
+                            System.out.println("Error: Token limit must be a number.");
+                            break;
+                        }
 
-                        service.createBot(bName, bGreet, bDef, bLimit);
-                        System.out.println("Bot created successfully!");
+                        try {
+                            service.createBot(bName, bGreet, bDef, bLimit);
+                            System.out.println("Bot created successfully!");
+
+                        } catch (exception.InvalidInputException e) {
+                            System.out.println("Validation Error: " + e.getMessage());
+
+                        } catch (exception.DatabaseOperationException e) {
+                            System.out.println("DB Error: " + e.getMessage());
+                        }
                         break;
 
                     case "2":
