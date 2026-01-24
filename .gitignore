@@ -6,6 +6,14 @@ out/
 !**/src/test/**/out/
 .kotlin
 
+### Java Compiled Files ###
+*.class
+
+### Security & Local Configs ###
+.env
+secrets.properties
+*.log
+
 ### Eclipse ###
 .apt_generated
 .classpath
