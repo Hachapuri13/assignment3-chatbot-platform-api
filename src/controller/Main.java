@@ -7,6 +7,7 @@ import model.User;
 import model.ChatSession;
 import repository.BotRepository;
 import repository.UserRepository;
+import repository.ChatSessionRepository;
 import service.ChatService;
 
 import java.util.Date;
@@ -14,6 +15,9 @@ import java.util.List;
 import java.util.Scanner;
 
 public class Main {
+    private static ChatService service;
+    private static Scanner scanner;
+
     public static void main(String[] args) {
         String host = System.getenv("DB_HOST");
         if (host == null) host = "localhost:5432";
@@ -28,128 +32,249 @@ public class Main {
         if (dbName == null) dbName = "chatbot_platform";
 
         IDB db = new PostgresDB(host, dbUser, dbPass, dbName);
-
         BotRepository botRepo = new BotRepository(db);
         UserRepository userRepo = new UserRepository(db);
+        ChatSessionRepository sessionRepo = new ChatSessionRepository(db);
 
-        repository.ChatSessionRepository sessionRepo = new repository.ChatSessionRepository(db);
-        ChatService service = new ChatService(botRepo, userRepo, sessionRepo);
-        Scanner scanner = new Scanner(System.in);
+        service = new ChatService(botRepo, userRepo, sessionRepo);
+        scanner = new Scanner(System.in);
 
         while (true) {
             System.out.println("\n=== CHATBOT PLATFORM API ===");
-            System.out.println("1. Create New Bot");
-            System.out.println("2. Create New User");
-            System.out.println("3. Show All Bots");
-            System.out.println("4. Start Chat Session");
-            System.out.println("5. Delete Bot");
-            System.out.println("6. Update Bot");
+            System.out.println("CRUD operations (Create, Read, Update, Delete)");
+            System.out.println("1. Manage BOTS");
+            System.out.println("2. Manage USERS");
+            System.out.println("3. Manage SESSIONS");
             System.out.println("0. Exit");
-            System.out.print("Select option: ");
+            System.out.print("Select entity: ");
 
             String choice = scanner.nextLine();
 
             try {
                 switch (choice) {
                     case "1":
-                        System.out.print("Enter Bot Name: ");
-                        String bName = scanner.nextLine();
-                        System.out.print("Enter Greeting: ");
-                        String bGreet = scanner.nextLine();
-                        System.out.print("Enter Definition (Prompt): ");
-                        String bDef = scanner.nextLine();
-                        System.out.print("Enter Token Limit (e.g., 8000): ");
-                        int bLimit;
-                        try {
-                            bLimit = Integer.parseInt(scanner.nextLine());
-                        } catch (NumberFormatException e) {
-                            System.out.println("Error: Token limit must be a number.");
-                            break;
-                        }
+                        handleBotOperations();
+                        break;
+                    case "2":
+                        handleUserOperations();
+                        break;
+                    case "3":
+                        handleSessionOperations();
+                        break;
+                    case "0":
+                        System.out.println("Exiting...");
+                        return;
+                    default:
+                        System.out.println("Invalid option.");
+                }
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
 
-                        try {
-                            service.createBot(bName, bGreet, bDef, bLimit);
-                            System.out.println("Bot created successfully!");
+    private static void handleBotOperations() {
+        while (true) {
+            System.out.println("\n--- MANAGE BOTS ---");
+            System.out.println("1. Create Bot");
+            System.out.println("2. Show All Bots");
+            System.out.println("3. Find Bot by ID");
+            System.out.println("4. Update Bot");
+            System.out.println("5. Delete Bot");
+            System.out.println("0. Back to Main Menu");
+            System.out.print("Select operation: ");
 
-                        } catch (exception.InvalidInputException e) {
-                            System.out.println("Validation Error: " + e.getMessage());
-
-                        } catch (exception.DatabaseOperationException e) {
-                            System.out.println("DB Error: " + e.getMessage());
-                        }
+            String choice = scanner.nextLine();
+            try {
+                switch (choice) {
+                    case "1":
+                        System.out.print("Name: ");
+                        String name = scanner.nextLine();
+                        System.out.print("Greeting: ");
+                        String greet = scanner.nextLine();
+                        System.out.print("Definition: ");
+                        String def = scanner.nextLine();
+                        System.out.print("Token Limit: ");
+                        int limit = Integer.parseInt(scanner.nextLine());
+                        service.createBot(name, greet, def, limit);
+                        System.out.println("Success: Bot created.");
                         break;
 
                     case "2":
-                        System.out.print("Enter User Name: ");
-                        String uName = scanner.nextLine();
-                        System.out.print("Enter Persona Description: ");
-                        String uPers = scanner.nextLine();
-                        System.out.print("Is Premium? (true/false): ");
-                        boolean uPrem = Boolean.parseBoolean(scanner.nextLine());
-
-                        service.createUser(uName, uPers, uPrem);
-                        System.out.println("User created successfully!");
+                        List<Bot> bots = service.getAllBots();
+                        System.out.println("--- List of Bots ---");
+                        bots.forEach(Bot::displayInfo);
                         break;
 
                     case "3":
-                        List<Bot> bots = botRepo.getAll();
-                        for (Bot b : bots) {
-                            b.displayInfo();
-                        }
+                        System.out.print("Enter ID: ");
+                        int id = Integer.parseInt(scanner.nextLine());
+                        Bot b = service.getBotById(id);
+                        b.displayInfo();
                         break;
 
                     case "4":
+                        System.out.print("Enter ID to update: ");
+                        int upId = Integer.parseInt(scanner.nextLine());
+                        System.out.print("New Name: ");
+                        String nName = scanner.nextLine();
+                        System.out.print("New Greeting: ");
+                        String nGreet = scanner.nextLine();
+                        System.out.print("New Definition: ");
+                        String nDef = scanner.nextLine();
+                        System.out.print("New Limit: ");
+                        int nLimit = Integer.parseInt(scanner.nextLine());
+                        service.updateBot(upId, nName, nGreet, nDef, nLimit);
+                        System.out.println("Success: Bot updated.");
+                        break;
+
+                    case "5":
+                        System.out.print("Enter ID to delete: ");
+                        int delId = Integer.parseInt(scanner.nextLine());
+                        service.deleteBot(delId);
+                        System.out.println("Success: Bot deleted.");
+                        break;
+
+                    case "0":
+                        return;
+                    default:
+                        System.out.println("Invalid option.");
+                }
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private static void handleUserOperations() {
+        while (true) {
+            System.out.println("\n--- MANAGE USERS ---");
+            System.out.println("1. Create User");
+            System.out.println("2. Show All Users");
+            System.out.println("3. Find User by ID");
+            System.out.println("4. Update User");
+            System.out.println("5. Delete User");
+            System.out.println("0. Back to Main Menu");
+            System.out.print("Select operation: ");
+
+            String choice = scanner.nextLine();
+            try {
+                switch (choice) {
+                    case "1":
+                        System.out.print("Name: ");
+                        String name = scanner.nextLine();
+                        System.out.print("Persona: ");
+                        String persona = scanner.nextLine();
+                        System.out.print("Is Premium (true/false): ");
+                        boolean prem = Boolean.parseBoolean(scanner.nextLine());
+                        service.createUser(name, persona, prem);
+                        System.out.println("Success: User created.");
+                        break;
+
+                    case "2":
+                        List<User> users = service.getAllUsers();
+                        System.out.println("--- List of Users ---");
+                        users.forEach(System.out::println);
+                        break;
+
+                    case "3":
+                        System.out.print("Enter ID: ");
+                        int id = Integer.parseInt(scanner.nextLine());
+                        System.out.println(service.getUserById(id));
+                        break;
+
+                    case "4":
+                        System.out.print("Enter ID to update: ");
+                        int upId = Integer.parseInt(scanner.nextLine());
+                        System.out.print("New Name: ");
+                        String nName = scanner.nextLine();
+                        System.out.print("New Persona: ");
+                        String nPers = scanner.nextLine();
+                        System.out.print("Is Premium (true/false): ");
+                        boolean nPrem = Boolean.parseBoolean(scanner.nextLine());
+                        service.updateUser(upId, nName, nPers, nPrem);
+                        System.out.println("Success: User updated.");
+                        break;
+
+                    case "5":
+                        System.out.print("Enter ID to delete: ");
+                        int delId = Integer.parseInt(scanner.nextLine());
+                        service.deleteUser(delId);
+                        System.out.println("Success: User deleted.");
+                        break;
+
+                    case "0":
+                        return;
+                    default:
+                        System.out.println("Invalid option.");
+                }
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private static void handleSessionOperations() {
+        while (true) {
+            System.out.println("\n--- MANAGE SESSIONS ---");
+            System.out.println("1. Start Chat (Create Session)");
+            System.out.println("2. Show Session History");
+            System.out.println("3. Find Session by ID");
+            System.out.println("4. Update Token Usage");
+            System.out.println("5. Delete Session Log");
+            System.out.println("0. Back to Main Menu");
+            System.out.print("Select operation: ");
+
+            String choice = scanner.nextLine();
+            try {
+                switch (choice) {
+                    case "1":
                         System.out.print("Enter Bot ID: ");
                         int botId = Integer.parseInt(scanner.nextLine());
                         System.out.print("Enter User ID: ");
                         int userId = Integer.parseInt(scanner.nextLine());
 
-                        Bot b = botRepo.getById(botId);
-                        User u = userRepo.getById(userId);
+                        Bot b = service.getBotById(botId);
+                        User u = service.getUserById(userId);
 
-                        if (b != null && u != null) {
-                            Date now = new Date();
+                        Date now = new Date();
+                        int load = b.estimateTokenUsage() + u.estimateTokenUsage();
 
-                            int contextLoad = b.estimateTokenUsage() + u.estimateTokenUsage();
-
-                            service.logChatSession(b, u, now, contextLoad);
-                            System.out.println(">> Connection logged to Database successfully.");
-
-                            ChatSession session = new ChatSession(1, b, u, now, contextLoad);
-                            session.printSessionDetails();
-
-                        } else {
-                            System.out.println("Bot or User not found.");
-                        }
+                        service.logChatSession(b, u, now, load);
+                        System.out.println(">> Chat started! Context load: " + load + " tokens.");
+                        System.out.println(">> Session saved to database.");
                         break;
-                    case "5":
-                        System.out.print("Enter Bot ID to delete: ");
-                        int delId = Integer.parseInt(scanner.nextLine());
 
-                        service.deleteBot(delId);
-                        System.out.println("Success: Bot deleted.");
+                    case "2":
+                        List<ChatSession> sessions = service.getAllSessions();
+                        System.out.println("--- Session History ---");
+                        sessions.forEach(System.out::println);
                         break;
-                    case "6":
-                        System.out.print("Enter Bot ID to update: ");
+
+                    case "3":
+                        System.out.print("Enter Session ID: ");
+                        int id = Integer.parseInt(scanner.nextLine());
+                        System.out.println(service.getSessionById(id));
+                        break;
+
+                    case "4":
+                        System.out.print("Enter Session ID: ");
                         int upId = Integer.parseInt(scanner.nextLine());
-
-                        System.out.print("Enter New Name: ");
-                        String upName = scanner.nextLine();
-                        System.out.print("Enter New Greeting: ");
-                        String upGreet = scanner.nextLine();
-                        System.out.print("Enter New Definition: ");
-                        String upDef = scanner.nextLine();
-                        System.out.print("Enter New Token Limit: ");
-                        int upLimit = Integer.parseInt(scanner.nextLine());
-
-                        service.updateBot(upId, upName, upGreet, upDef, upLimit);
-                        System.out.println("Success: Bot updated.");
+                        System.out.print("Enter new total tokens: ");
+                        int tokens = Integer.parseInt(scanner.nextLine());
+                        service.updateSessionTokens(upId, tokens);
+                        System.out.println("Success: Session tokens updated.");
                         break;
-                    case "0":
-                        System.out.println("Exiting...");
-                        db.close();
-                        return;
 
+                    case "5":
+                        System.out.print("Enter Session ID: ");
+                        int delId = Integer.parseInt(scanner.nextLine());
+                        service.deleteSession(delId);
+                        System.out.println("Success: Session deleted.");
+                        break;
+
+                    case "0":
+                        return;
                     default:
                         System.out.println("Invalid option.");
                 }

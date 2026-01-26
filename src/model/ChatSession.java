@@ -26,4 +26,13 @@ public class ChatSession {
         System.out.println("Started at: " + startedAt);
         System.out.println("============================");
     }
+
+    @Override
+    public String toString() {
+        return "Session ID: " + id +
+                " | Bot ID: " + (bot != null ? bot.getId() : "null") +
+                " | User ID: " + (user != null ? user.getId() : "null") +
+                " | Started: " + startedAt +
+                " | Tokens: " + totalTokensUsed;
+    }
 }

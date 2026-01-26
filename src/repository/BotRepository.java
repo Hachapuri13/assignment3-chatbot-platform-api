@@ -29,7 +29,7 @@ public class BotRepository {
         String sql = "SELECT * FROM bots";
         try (Connection conn = db.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery(sql)) {
+             ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
                 bots.add(new Bot(
                         rs.getInt("id"),

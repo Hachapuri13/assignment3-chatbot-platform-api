@@ -29,7 +29,7 @@ public class UserRepository {
         String sql = "SELECT * FROM users";
         try (Connection conn = db.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery(sql)) {
+             ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
                 users.add(new User(
                         rs.getInt("id"),
@@ -58,5 +58,28 @@ public class UserRepository {
             }
         }
         return null;
+    }
+
+    public boolean delete(int id) throws SQLException {
+        String sql = "DELETE FROM users WHERE id = ?";
+        try (Connection conn = db.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            return pstmt.executeUpdate() > 0;
+        }
+    }
+
+    public boolean update(User user) throws SQLException {
+        String sql = "UPDATE users SET name = ?, persona = ?, is_premium = ? WHERE id = ?";
+        try (Connection conn = db.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, user.getName());
+            pstmt.setString(2, user.getPersona());
+            pstmt.setBoolean(3, user.isPremium());
+            pstmt.setInt(4, user.getId());
+
+            return pstmt.executeUpdate() > 0;
+        }
     }
 }
