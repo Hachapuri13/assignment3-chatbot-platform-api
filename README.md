@@ -142,7 +142,7 @@ The new entry point of the application, allowing selection between Bots, Users, 
 
 ### 2. Bot Management Sub-Menu
 Demonstrates the specific CRUD operations available for Bots (Create, Show All, Find by ID, Update, Delete).
-![Bot Menu](docs/screenshots/bot_menu.png)
+![Bot Menu](docs/screenshots/bot_crud.png)
 
 ### 3. Session History & Logic
 Shows the session history table, displaying linked Bot IDs and User IDs correctly persisted in the database.
