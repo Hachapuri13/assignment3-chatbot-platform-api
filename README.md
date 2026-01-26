@@ -89,13 +89,16 @@ INSERT INTO bots (name, greeting, definition, token_limit) VALUES
 
 The `Main` class serves as the Controller layer. It configures the application using **Dependency Injection** (wiring Repositories with the Database provider) and exposes full CRUD operations via CLI.
 
-### Summary of CRUD operations
-* **Create**: `service.createBot()` / `service.createUser()` -> Validates input and persists to DB.
-* **Read**: `repository.getAll()` -> Fetches list of entities.
-* **Update**: `service.updateBot()` -> Modifies name, definition, or limits of an existing bot.
-* **Delete**: `service.deleteBot()` -> Removes a bot from the DB (cascading deletes sessions).
-* **Session Logging**: `service.logChatSession()` -> Calculates context load and saves the interaction history to the `chat_sessions` table.
+### Menu Structure
+1.  **Manage BOTS**: Sub-menu for Creating, Reading (All/ById), Updating, and Deleting Bots.
+2.  **Manage USERS**: Sub-menu for Creating, Reading (All/ById), Updating, and Deleting Users.
+3.  **Manage SESSIONS**: Sub-menu for Starting Chats, Viewing History, Updating Tokens, and Deleting Logs.
 
+### Architecture Flow
+* **Controller (`Main`)**: Handles user input via `Scanner`, displays menus, and delegates logic to the Service layer.
+* **Service (`ChatService`)**: Validates input (e.g., checks for empty names, negative limits) and calls Repositories.
+* **Repository Layer**: Executes raw SQL queries using `PreparedStatement`.
+* 
 ---
 
 ## E. Instructions to Compile and Run
@@ -133,29 +136,21 @@ java -cp ".:../lib/postgresql-42.7.2.jar" controller.Main
 ---
 ## F. Screenshots
 
-### 1. Create Operations
-Demonstrates adding new entities (Bot and User) with validation logic.
-![Create Bot](docs/screenshots/create_bot.png)
+### 1. Main Hierarchical Menu
+The new entry point of the application, allowing selection between Bots, Users, and Sessions entities.
+![Main Menu](docs/screenshots/main_menu.png)
 
-### 2. Read Operations (List All)
-Retrieves and displays all bots stored in the database.
-![Read Operations](docs/screenshots/list.png)
+### 2. Bot Management Sub-Menu
+Demonstrates the specific CRUD operations available for Bots (Create, Show All, Find by ID, Update, Delete).
+![Bot Menu](docs/screenshots/bot_menu.png)
 
-### 3. Update Operation
-Demonstrates modifying an existing bot's attributes (e.g., changing token limit or name).
-![Update Bot](docs/screenshots/update_bot.png)
+### 3. Session History & Logic
+Shows the session history table, displaying linked Bot IDs and User IDs correctly persisted in the database.
+![Session History](docs/screenshots/session_history.png)
 
-### 4. Delete Operation
-Demonstrates removing a bot by ID. Note that due to `ON DELETE CASCADE`, associated sessions are also handled safely.
-![Delete Bot](docs/screenshots/delete_bot.png)
-
-### 5. Chat Session Logging
-Shows the process of linking a User and a Bot. The system calculates the context load and logs the session to the database.
-![Chat Session](docs/screenshots/session.png)
-
-### 6. Error Handling
-Demonstrates robust error handling (e.g., preventing negative token limits or handling connection errors).
-![Error Handling](docs/screenshots/error.png)
+### 4. Robust Error Handling
+Demonstrates the system catching invalid inputs (e.g., entering text instead of a numeric ID) without crashing.
+![Error Handling](docs/screenshots/error_handling.png)
 
 ---
 
